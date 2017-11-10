@@ -1,0 +1,197 @@
+---
+title: "Hackathon"
+author: "Manish"
+date: "10 November 2017"
+output: html_document
+
+---
+
+Define your data exploration, imputation and visualization approach - data in compensation_level has been imputed from 4 levels to 2 levels and the correlation table has been plotted.
+
+```{r}
+library(corrplot)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(class)
+library(tree)
+library(e1071)
+
+
+model_DT <- read.csv(file="Model_Data.csv",header=TRUE)
+
+correlation <- select(model_DT,c("Age","fnlwgt","education_number","capital.gain","capital.loss","hours_per_week"))
+
+corr_values <- (cor(correlation))
+
+ggplot(correlation,aes(x=Age,y=fnlwgt))+geom_point()+geom_smooth()
+
+#View(corr_values)
+
+a <- corrplot(corr_values, method = "square")
+```
+
+
+Decision Tree based model
+
+Model1=tree_model_train<-tree(Compensational_level1~.,data=model_data_train)
+
+model1_accuracy=85%
+
+```{r}
+
+
+setwd("C:/Users/Administrator/Desktop/Manish/Manish/TERM 2/Machine Learning/Hackathon")
+
+model_DT <- read.csv(file="Model_Data.csv",header=TRUE)
+
+model_DT$Compensational_level1 <- gsub("\\.","",model_DT$Compensational_level)
+
+model_DT$Compensational_level1 <- as.factor(model_DT$Compensational_level1)
+
+model_DT <- model_DT[,-c(14,15)]
+
+str(model_DT)
+
+```
+
+```{r}
+
+set.seed(52)
+
+sample_DT <- sample.int(n=nrow(model_DT),size=floor(0.8*nrow(model_DT)),replace=F)
+
+model_data_train<-model_DT[sample_DT,]
+
+#model_data_train$native.country <- NULL
+
+model_data_test<-model_DT[-sample_DT,]
+
+tree_model_train<-tree(Compensational_level1~.,data=model_data_train)
+
+plot(tree_model_train)
+
+text(tree_model_train)
+
+DT_prediction<-predict(tree_model_train,model_data_test)
+
+maxidx=function(arr)
+{
+  return(which(arr==max(arr)))
+}
+
+idx=apply(DT_prediction,c(1),maxidx)
+
+prediction_DT=c('No','Yes')[idx]
+
+confmat_DT=table(prediction_DT,model_data_test$Compensational_level1)
+
+accuracy_DT=sum(diag(confmat_DT))/sum(confmat_DT)
+
+accuracy_DT
+
+```
+
+
+MODEL2=model_predict_NB <- naiveBayes(Compensational_level1~.,data = sample_model_NB_train)
+
+Model2_accuracy=83%
+
+```{r}
+model_NB <- read.csv(file="Model_Data.csv",header=TRUE)
+
+model_NB$Compensational_level1 <- gsub("\\.","",model_NB$Compensational_level)
+
+model_NB$Compensational_level1 <- as.factor(model_NB$Compensational_level1)
+
+model_NB <- model_NB[,-c(14,15)]
+
+set.seed(52)
+
+sample_NB <- sample.int(n=nrow(model_NB),size=floor(0.8*nrow(model_NB)),replace=F)
+
+sample_model_NB_train <- model_NB[sample_NB,]
+
+sample_model_NB_test <- model_NB[-sample_NB,]
+
+model_predict_NB <- naiveBayes(Compensational_level1~.,data = sample_model_NB_train)
+
+pred_NB <- predict(model_predict_NB,sample_model_NB_test)
+
+confmat_NB <- table(pred_NB,sample_model_NB_test$Compensational_level1)
+
+accuracy_NB=sum(diag(confmat_NB))/sum(confmat_NB)
+
+accuracy_NB
+
+```
+
+
+
+KNN based model
+
+MOdel3=KNN_pred_label <- knn(train=model_KNN_train,test=model_KNN_test,cl=model_KNN_train_label,k)
+
+MOdel3_accuracy=77%
+
+```{r}
+
+model_KNN <- read.csv(file="Model_Data.csv",header=TRUE)
+
+
+model_KNN$Compensational_level1 <- gsub("\\.","",model_NB$Compensational_level)
+
+model_KNN$Compensational_level1 <- as.factor(model_KNN$Compensational_level1)
+
+model_KNN$native.country <- as.factor(model_KNN$native.country)
+
+model_KNN$native.country <- as.integer(model_KNN$native.country)
+
+model_KNN <- model_KNN[,-15]
+
+model_KNN
+
+str(model_KNN)
+
+model_KNN$workclass <- as.integer(model_KNN$workclass)
+
+model_KNN$education <- as.integer(model_KNN$education)
+
+model_KNN$marital_status <- as.integer(model_KNN$marital_status)
+
+model_KNN$occupation <- as.integer(model_KNN$occupation )
+
+model_KNN$relationship <-  as.integer(model_KNN$relationship)
+
+model_KNN$race <- as.integer(model_KNN$race)
+
+model_KNN$sex <- as.integer(model_KNN$sex)
+
+
+set.seed(28)
+
+randon_sample_KNN <- sample.int(n=nrow(model_KNN),size=floor(0.8*nrow(model_KNN)),replace=F)
+  
+model_KNN_train <- model_KNN[randon_sample_KNN,(1:14)]
+
+model_KNN_test<-model_KNN[-randon_sample_KNN,(1:14)]
+
+model_KNN_train_label<-model_KNN[randon_sample_KNN,15]
+
+model_KNN_test_label<-model_KNN[-randon_sample_KNN,15]
+
+
+k=6
+
+
+KNN_pred_label <- knn(train=model_KNN_train,test=model_KNN_test,cl=model_KNN_train_label,k)
+
+confmatrix_KNN=table(model_KNN_test_label,KNN_pred_label)
+
+accuracy_KNN<-sum(diag(confmatrix_KNN)/sum(confmatrix_KNN))  
+
+accuracy_KNN
+
+
+```
+
